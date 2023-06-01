@@ -47,4 +47,12 @@ RUN echo ". /etc/bash_completion.d/holohub_autocomplete" >> /etc/bash.bashrc
 #   performed at docker run time in case users want to use a different BUILD_TYPE
 ARG CMAKE_BUILD_TYPE=Release
 
+COPY ../qcap-sdk_1.88.0-l4t-r35.4.0_aarch64.deb /tmp
+RUN dpkg -i /tmp/qcap-sdk_1.88.0-l4t-r35.4.0_aarch64.deb
 
+RUN apt update \
+    && apt install --no-install-recommends -y \
+        libgstreamer1.0-0 \
+        libgstreamer-plugins-base1.0-0 \
+        libgles2 \
+        libopengl0 \
