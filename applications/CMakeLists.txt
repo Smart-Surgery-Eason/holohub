@@ -76,7 +76,9 @@ add_holohub_application(object_detection_torch HOLOSCAN_SAMPLE_APP)
 
 add_holohub_application(tao_peoplenet)
 
-add_holohub_application(ultrasound_segmentation HOLOSCAN_SAMPLE_APP)
+add_holohub_application(ultrasound_segmentation DEPENDS
+                        OPERATORS qcap_source
+                        HOLOSCAN_SAMPLE_APP)
 
 add_holohub_application(volume_rendering DEPENDS
                         OPERATORS volume_loader
