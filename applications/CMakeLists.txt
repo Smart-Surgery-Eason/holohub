@@ -65,6 +65,7 @@ add_holohub_application(multiai_endoscopy HOLOSCAN_SAMPLE_APP)
 
 add_holohub_application(multiai_ultrasound DEPENDS
                         OPERATORS visualizer_icardio
+                                  qcap_source
                         HOLOSCAN_SAMPLE_APP)
 
 add_holohub_application(simple_radar_pipeline)
