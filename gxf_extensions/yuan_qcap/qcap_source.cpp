@@ -395,13 +395,11 @@ gxf_result_t QCAPSource::start() {
       pixel_format_ = PIXELFORMAT_YUY2;
     }
   }
-  QCAP_SET_VIDEO_DEFAULT_OUTPUT_FORMAT(m_hDevice, pixel_format_, width_.get(), height_.get(), 0, 0);
+  QCAP_SET_VIDEO_DEFAULT_OUTPUT_FORMAT(m_hDevice, pixel_format_, 0, 0, 0, 0);
 
   if (use_rdma_) {
     for (int i = 0; i < kDefaultGPUDirectRingQueueSize; i++) {
-      cudaMalloc((void**)&m_pGPUDirectBuffer[i], kDefaultPreviewSize);
-      // QCAP_ALLOC_VIDEO_GPUDIRECT_PREVIEW_BUFFER(m_hDevice, &m_pGPUDirectBuffer[i],
-      // kDefaultPreviewSize);
+      QCAP_ALLOC_VIDEO_GPUDIRECT_PREVIEW_BUFFER(m_hDevice, &m_pGPUDirectBuffer[i], kDefaultPreviewSize);
       QCAP_BIND_VIDEO_GPUDIRECT_PREVIEW_BUFFER(
           m_hDevice, i, m_pGPUDirectBuffer[i], kDefaultPreviewSize);
       GXF_LOG_INFO("QCAP Source: Allocate gpu buffer id:%d, pointer:%p size:%d",
@@ -426,8 +424,8 @@ gxf_result_t QCAPSource::stop() {
       for (int i = 0; i < kDefaultGPUDirectRingQueueSize; i++) {
         QCAP_UNBIND_VIDEO_GPUDIRECT_PREVIEW_BUFFER(
             m_hDevice, i, m_pGPUDirectBuffer[i], kDefaultPreviewSize);
-        // QCAP_FREE_VIDEO_GPUDIRECT_PREVIEW_BUFFER(m_hDevice, m_pGPUDirectBuffer[i],
-        // kDefaultPreviewSize);
+        QCAP_FREE_VIDEO_GPUDIRECT_PREVIEW_BUFFER(m_hDevice, m_pGPUDirectBuffer[i],
+            kDefaultPreviewSize);
         cudaFree((void**)&m_pGPUDirectBuffer[i]);
       }
     }
@@ -488,6 +486,7 @@ gxf_result_t QCAPSource::tick() {
     gxf::VideoTypeTraits<gxf::VideoFormat::GXF_VIDEO_FORMAT_RGB> video_type;
     gxf::VideoFormatSize<gxf::VideoFormat::GXF_VIDEO_FORMAT_RGB> color_format;
     auto color_planes = color_format.getDefaultColorPlanes(out_width, out_height);
+  color_planes[0].stride = out_width * 3;
     gxf::VideoBufferInfo info{(uint32_t)out_width,
                               (uint32_t)out_height,
                               video_type.value,
@@ -573,6 +572,7 @@ gxf_result_t QCAPSource::tick() {
   gxf::VideoTypeTraits<gxf::VideoFormat::GXF_VIDEO_FORMAT_RGB> video_type;
   gxf::VideoFormatSize<gxf::VideoFormat::GXF_VIDEO_FORMAT_RGB> color_format;
   auto color_planes = color_format.getDefaultColorPlanes(out_width, out_height);
+  color_planes[0].stride = out_width * 3;
   gxf::VideoBufferInfo info{(uint32_t)out_width,
                             (uint32_t)out_height,
                             video_type.value,
