@@ -29,6 +29,8 @@ from holoscan.resources import UnboundedAllocator
 
 from holohub.visualizer_icardio import VisualizerICardioOp
 
+# Enable this line for Yuan capture card
+from holohub.qcap_source import QCAPSourceOp
 
 class MultiAIICardio(Application):
     def __init__(self, data, source="replayer"):
@@ -42,15 +44,21 @@ class MultiAIICardio(Application):
 
         # Optional parameters affecting the graph created by compose.
         source = source.lower()
-        if source not in ["replayer", "aja"]:
-            raise ValueError(f"unsupported source: {source}. Please use 'replayer' or 'aja'.")
+        if source not in ["replayer", "aja", "yuan"]:
+            raise ValueError(f"unsupported source: {source}. Please use 'replayer' or 'aja' or 'yuan'.")
         self.source = source
 
         self.sample_data_path = data
 
     def compose(self):
         is_aja = self.source.lower() == "aja"
-        SourceClass = AJASourceOp if is_aja else VideoStreamReplayerOp
+        is_yuan = self.source.lower() == "yuan"
+        if is_aja:
+            SourceClass = AJASourceOp
+        elif is_yuan:
+            SourceClass = QCAPSourceOp
+        else:
+            SourceClass = VideoStreamReplayerOp
         source_kwargs = self.kwargs(self.source)
         if self.source == "replayer":
             video_dir = self.sample_data_path
@@ -127,7 +135,7 @@ class MultiAIICardio(Application):
 
         # connect the input to the resizer and each pre-processor
         for op in [plax_cham_resized, plax_cham_pre, aortic_ste_pre, b_mode_pers_pre]:
-            if is_aja:
+            if is_aja or is_yuan:
                 self.add_flow(source, op, {("video_buffer_output", "")})
             else:
                 self.add_flow(source, op)
@@ -165,10 +173,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--source",
-        choices=["replayer", "aja"],
+        choices=["replayer", "aja", "yuan"],
         default="replayer",
         help=(
-            "If 'replayer', replay a prerecorded video. If 'aja' use an AJA "
+            "If 'replayer', replay a prerecorded video. Otherwise use a "
             "capture card as the source (default: %(default)s)."
         ),
     )
