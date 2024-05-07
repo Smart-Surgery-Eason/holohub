@@ -55,6 +55,7 @@ target_link_libraries(gxf_qcap_source_lib
     GXF::multimedia
     GXF::std
     yaml-cpp
+    holoscan::core #for dlpack
 )
 
 target_include_directories(gxf_qcap_source_lib
