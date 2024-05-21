@@ -47,6 +47,10 @@ EXPAND_FILE(no_device_png)
 EXPAND_FILE(no_signal_png)
 EXPAND_FILE(no_sdk_png)
 
+extern cudaError_t convert_YUYV_10c_RGB_8s_C2C1R(
+	const void* pSrc, int srcStep,
+	void* pDst, int dstStep, int nWidth, int nHeight);
+
 namespace yuan {
 namespace holoscan {
 
@@ -311,6 +315,8 @@ gxf_result_t QCAPSource::start() {
       pixel_format_ = PIXELFORMAT_YUY2;
   } else if (pixel_format_str_.get().compare("nv12") == 0) {
       pixel_format_ = PIXELFORMAT_NV12;
+  } else if (pixel_format_str_.get().compare("y210") == 0) {
+      pixel_format_ = PIXELFORMAT_Y210;
   } else {
       pixel_format_ = PIXELFORMAT_BGR24;
   }
@@ -523,7 +529,8 @@ gxf_result_t QCAPSource::tick() {
   qcap_av_frame_t* pAVFrame = (qcap_av_frame_t*)QCAP_RCBUFFER_LOCK_DATA(pRCBuffer);
 
   PVOID frame = pAVFrame->pData[0];
-  NppStatus status;
+  NppStatus status = NPP_NO_ERROR;
+  cudaError_t cuda_status = cudaSuccess;
   NppiSize oSizeROI;
   int video_width = m_nVideoWidth;
   int video_height = m_nVideoHeight;
@@ -552,6 +559,10 @@ gxf_result_t QCAPSource::tick() {
     const int aDstOrder[3] = {2, 1, 0};
     status = nppiSwapChannels_8u_C3R(
         pAVFrame->pData[0], video_width * 3, (Npp8u*)frame, video_width * 3, oSizeROI, aDstOrder);
+  } else if (pixel_format_ == PIXELFORMAT_Y210 &&
+             output_pixel_format_ == PIXELFORMAT_RGB24) {  // Default is BGR. BGR to RGB
+    cuda_status = convert_YUYV_10c_RGB_8s_C2C1R(
+        pAVFrame->pData[0], video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
   } else if (pixel_format_ == PIXELFORMAT_NV12 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // NV12 to RGB
     const int aDstOrder[3] = {2, 1, 0};
@@ -567,7 +578,7 @@ gxf_result_t QCAPSource::tick() {
   QCAP_RCBUFFER_UNLOCK_DATA(pRCBuffer);
   QCAP_RCBUFFER_RELEASE(pRCBuffer);
 
-  if (status != 0) {
+  if (status != NPP_NO_ERROR || cuda_status != cudaSuccess) {
     GXF_LOG_INFO("QCAP Source: convert error %d buffer %p(%08x) to %p(%08x) %dx%d\n",
                  status,
                  pAVFrame->pData[0],

@@ -22,6 +22,7 @@ enable_language(CUDA)
 
 # Create library
 add_library(gxf_qcap_source_lib SHARED
+  cuda/convert.cu
   qcap_queue.hpp
   qcap_source.cpp
   qcap_source.hpp
