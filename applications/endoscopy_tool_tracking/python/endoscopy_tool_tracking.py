@@ -88,7 +88,7 @@ class EndoscopyApp(Application):
         elif self.source.lower() == "yuan":
             yuan_kwargs = self.kwargs("yuan")
             # Uncomment to enable QCap
-            # source = QCAPSourceOp(self, name="yuan", **yuan_kwargs)
+            source = QCAPSourceOp(self, name="yuan", **yuan_kwargs)
 
             # 4 bytes/channel, 4 channels
             width = yuan_kwargs["width"]
