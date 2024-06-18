@@ -541,8 +541,8 @@ gxf_result_t QCAPSource::tick() {
         pAVFrame->pData[0], video_width * 3, (Npp8u*)frame, video_width * 3, oSizeROI, aDstOrder);
   } else if (pixel_format_ == PIXELFORMAT_Y210 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // Default is BGR. BGR to RGB
-    status = convert_YUYV_10c_RGB_8s_C2C1R(
-        pAVFrame->pData[0], video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
+    //status = convert_YUYV_10c_RGB_8s_C2C1R(
+    //    pAVFrame->pData[0], video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
   } else if (pixel_format_ == PIXELFORMAT_NV12 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // NV12 to RGB
     const int aDstOrder[3] = {2, 1, 0};
