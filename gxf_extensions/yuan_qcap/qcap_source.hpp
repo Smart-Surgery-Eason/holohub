@@ -176,8 +176,10 @@ class QCAPSource : public gxf::Codelet {
 
   unsigned char* m_pRGBBUffer[kDefaultColorConvertBufferSize] = {};
   unsigned long m_nRGBBufferIndex = 0;
+  CUdeviceptr m_cuConvertBuffer[kDefaultColorConvertBufferSize] = {};
+  unsigned long m_nConvertBufferIndex = 0;
 
-  CUcontext m_CudaContext = nullptr;
+  CUcontext m_CudaContext = 0;
 
   struct Image m_iNoDeviceImage;
   struct Image m_iNoSignalImage;

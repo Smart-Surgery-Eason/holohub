@@ -74,6 +74,26 @@ QRETURN on_process_no_signal_detected(PVOID pDevice, ULONG nVideoInput, ULONG nA
   return QCAP_RT_OK;
 }
 
+inline unsigned long getVideoSizeByPixelFormat(uint32_t pixel_format_, unsigned long video_width, unsigned long video_height) {
+      unsigned long video_size = 0;
+      switch (pixel_format_) {
+          case PIXELFORMAT_YUY2:
+              video_size = video_width * video_height * 2;
+              break;
+          case PIXELFORMAT_BGR24:
+              video_size = video_width * video_height * 3;
+              break;
+          case PIXELFORMAT_Y210:
+              video_size = video_width * video_height * 10 / 8 * 2; // bits
+              break;
+          case PIXELFORMAT_NV12:
+              video_size = video_width * video_height * 3 / 2;
+              break;
+      }
+      //GXF_LOG_INFO("QCAP Source: getVideoSizeByPixelFormat %08x %ldx%ld to %ld\n", pixel_format_, video_width, video_height, video_size);
+      return video_size;
+}
+
 QRETURN on_process_format_changed(PVOID pDevice, ULONG nVideoInput, ULONG nAudioInput,
                                   ULONG nVideoWidth, ULONG nVideoHeight, BOOL bVideoIsInterleaved,
                                   double dVideoFrameRate, ULONG nAudioChannels,
@@ -128,6 +148,17 @@ QRETURN on_process_format_changed(PVOID pDevice, ULONG nVideoInput, ULONG nAudio
 
   qcap->m_status = STATUS_SIGNAL_LOCKED;
   qcap->m_queue.signal(true);
+
+  unsigned long video_size = getVideoSizeByPixelFormat(qcap->pixel_format_,
+          qcap->m_nVideoWidth, qcap->m_nVideoHeight);
+  for (int i = 0; i < kDefaultColorConvertBufferSize; i++) {
+      if (qcap->m_cuConvertBuffer[i] != 0) {
+          if (cuMemFree(qcap->m_cuConvertBuffer[i]) != CUDA_SUCCESS) {
+              throw std::runtime_error("cuMemFree failed.");
+          }
+          qcap->m_cuConvertBuffer[i] = 0;
+      }
+  }
 
   return QCAP_RT_OK;
 }
@@ -536,27 +567,68 @@ gxf_result_t QCAPSource::tick() {
   GXF_LOG_INFO("video preview cb frame: %p type: %d\n", pAVFrame->pData[0], attributes.type);
 #endif
 
+  unsigned long video_size = getVideoSizeByPixelFormat(pixel_format_,
+          m_nVideoWidth, m_nVideoHeight);
+  for (int i = 0; i < kDefaultColorConvertBufferSize; i++) {
+      if (m_cuConvertBuffer[i] == 0 && video_size != 0) {
+          cuMemAlloc(&(m_cuConvertBuffer[i]), video_size);
+          //GXF_LOG_INFO("QCAP Source: convert buffer %lld %ld\n", m_cuConvertBuffer[i], video_size);
+      }
+  }
+
+  m_nConvertBufferIndex = (m_nConvertBufferIndex + 1) % kDefaultColorConvertBufferSize;
+  CUdeviceptr convert_buf = m_cuConvertBuffer[m_nConvertBufferIndex];
+  unsigned char *video_src = nullptr;
   storage_type = gxf::MemoryStorageType::kDevice;
   if (pixel_format_ == PIXELFORMAT_YUY2 &&
       output_pixel_format_ == PIXELFORMAT_RGB24) {  // YUY2 to RGB
+    if (use_rdma_ == false) {
+        cuMemcpyHtoD(convert_buf, pAVFrame->pData[0], video_size);
+        video_src = (unsigned char*) convert_buf;
+    } else {
+        video_src = pAVFrame->pData[0];
+    }
     status = nppiYCbCr422ToRGB_8u_C2C3R(
-        pAVFrame->pData[0], video_width * 2, (Npp8u*)frame, video_width * 3, oSizeROI);
+        video_src, video_width * 2, (Npp8u*)frame, video_width * 3, oSizeROI);
+    storage_type = gxf::MemoryStorageType::kDevice;
   } else if (pixel_format_ == PIXELFORMAT_BGR24 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // Default is BGR. BGR to RGB
     const int aDstOrder[3] = {2, 1, 0};
+    if (use_rdma_ == false) {
+        cuMemcpyHtoD(convert_buf, pAVFrame->pData[0], video_size);
+        video_src = (unsigned char*) convert_buf;
+    } else {
+        video_src = pAVFrame->pData[0];
+    }
     status = nppiSwapChannels_8u_C3R(
-        pAVFrame->pData[0], video_width * 3, (Npp8u*)frame, video_width * 3, oSizeROI, aDstOrder);
+        video_src, video_width * 3, (Npp8u*)frame, video_width * 3, oSizeROI, aDstOrder);
+    storage_type = gxf::MemoryStorageType::kDevice;
   } else if (pixel_format_ == PIXELFORMAT_Y210 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // Default is BGR. BGR to RGB
+    if (use_rdma_ == false) {
+        cuMemcpyHtoD(convert_buf, pAVFrame->pData[0], video_size);
+        video_src = (unsigned char*) convert_buf;
+    } else {
+        video_src = pAVFrame->pData[0];
+    }
     cuda_status = convert_YUYV_10c_RGB_8s_C2C1R(
-        pAVFrame->pData[0], video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
+        video_src, video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
+    storage_type = gxf::MemoryStorageType::kDevice;
   } else if (pixel_format_ == PIXELFORMAT_NV12 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // NV12 to RGB
     const int aDstOrder[3] = {2, 1, 0};
     Npp8u* input[2];
-    input[0] = (Npp8u*)pAVFrame->pData[0];
-    input[1] = (Npp8u*)pAVFrame->pData[1];
+    if (use_rdma_ == false) {
+        cuMemcpyHtoD(convert_buf, pAVFrame->pData[0], video_size);
+        video_src = (unsigned char*) convert_buf;
+        input[0] = (Npp8u*)video_src;
+        input[1] = (Npp8u*)(video_src + video_width * video_height);
+    } else {
+        input[0] = (Npp8u*)pAVFrame->pData[0];
+        input[1] = (Npp8u*)pAVFrame->pData[1];
+    }
     status = nppiNV12ToRGB_8u_P2C3R(input, video_width, (Npp8u*)frame, video_width * 3, oSizeROI);
+    storage_type = gxf::MemoryStorageType::kDevice;
   } else {
     status = NPP_ERROR;
   }
@@ -565,11 +637,13 @@ gxf_result_t QCAPSource::tick() {
   QCAP_RCBUFFER_RELEASE(pRCBuffer);
 
   if (status != NPP_NO_ERROR || cuda_status != cudaSuccess) {
-    GXF_LOG_INFO("QCAP Source: convert error %d %d buffer %p(%08x) to %p(%08x) %dx%d\n",
+    GXF_LOG_INFO("QCAP Source: convert error %d %d buffer %p(%08x) convert %llx %ld to %p(%08x) %dx%d\n",
                  status,
                  cuda_status,
                  pAVFrame->pData[0],
                  pixel_format_,
+                 convert_buf,
+                 video_size,
                  frame,
                  output_pixel_format_,
                  video_width,
