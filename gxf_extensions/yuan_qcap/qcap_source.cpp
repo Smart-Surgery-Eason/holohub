@@ -49,6 +49,10 @@ extern cudaError_t convert_YUYV_10c_RGB_8s_C2C1R(
        const void* pSrc, int srcStep,
        void* pDst, int dstStep, int nWidth, int nHeight);
 
+extern cudaError_t convert_YUYV_10c_RGB_8s_C2C1R_sqd(
+        const int header_size, const void* pSrc, const int srcStep,
+        void* pDst, const int dstStep, const int nWidth, const int nHeight);
+
 namespace nvidia {
 namespace holoscan {
 
@@ -608,12 +612,20 @@ gxf_result_t QCAPSource::tick() {
     if (use_rdma_ == false) {
         cuMemcpyHtoD(convert_buf, pAVFrame->pData[0], video_size);
         video_src = (unsigned char*) convert_buf;
+        cuda_status = convert_YUYV_10c_RGB_8s_C2C1R(
+                video_src, video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
+        storage_type = gxf::MemoryStorageType::kDevice;
     } else {
         video_src = pAVFrame->pData[0];
+        if (sdi12g_mode_.get() == SDI12G_QUADLINK_MODE) { // SQD with header
+            cuda_status = convert_YUYV_10c_RGB_8s_C2C1R_sqd(
+                    10, video_src, (video_width / 4 * 5) + 16, (Npp8u*)frame, video_width * 3, video_width, video_height);
+        } else {
+            cuda_status = convert_YUYV_10c_RGB_8s_C2C1R(
+                    video_src, video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
+        }
+        storage_type = gxf::MemoryStorageType::kDevice;
     }
-    cuda_status = convert_YUYV_10c_RGB_8s_C2C1R(
-        video_src, video_width / 2 * 5, (Npp8u*)frame, video_width * 3, video_width, video_height);
-    storage_type = gxf::MemoryStorageType::kDevice;
   } else if (pixel_format_ == PIXELFORMAT_NV12 &&
              output_pixel_format_ == PIXELFORMAT_RGB24) {  // NV12 to RGB
     const int aDstOrder[3] = {2, 1, 0};
