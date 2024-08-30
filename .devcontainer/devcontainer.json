@@ -4,5 +4,5 @@
 	"runArgs": [
 		"--runtime=nvidia"
 	],
-    "mounts": [ "source=${localWorkspaceFolder}/..,target=/workspace/holohub,type=bind", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ]
+    "mounts": [ "source=/home/ubuntu/holohub,target=/workspace/holohub,type=bind", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ]
 }
