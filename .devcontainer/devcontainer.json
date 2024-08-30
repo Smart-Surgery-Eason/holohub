@@ -1,0 +1,9 @@
+{
+    "name": "eason_holohub_dev",
+    "dockerFile": "Dockerfile",
+    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix"],
+    "containerEnv": {
+        "DISPLAY": "localhost:10.0"
+    },
+    "runArgs": ["--privileged"]
+}
