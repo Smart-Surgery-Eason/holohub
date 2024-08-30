@@ -1,5 +1,5 @@
 {
     "name": "eason_holohub_dev",
     "image": "holohub:ngc-v2.2.0-dgpu",
-    "mounts": ["source=../,target=/workspace/holohub"]
+    "mounts": ["source=${localEnv:HOME}/holohub,target=/workspace/holohub"]
 }
