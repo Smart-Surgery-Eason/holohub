@@ -1,8 +1,13 @@
 {
 	"name": "holohub:ngc-v2.2.0-dgpu",
 	"image": "easonli0701/holohub:ngc-v2.2.0-dgpu",
-	"runArgs": [
-		"--runtime=nvidia"
-	],
-    "mounts": [ "source=/home/ubuntu/holohub,target=/workspace/holohub,type=bind", "source=/tmp/.X11-unix, target=/tmp/.X11-unix,type=bind" ]
+    "runArgs": [
+        "--net", "host",
+        "--interactive",
+        "--tty",
+        "-e", "DISPLAY=${localEnv:DISPLAY}",
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
+        "-v", "/tmp/.docker.xauth:/tmp/.docker.xauth",
+        "-e", "XAUTHORITY=/tmp/.docker.xauth"
+      ]
 }
