@@ -1,7 +1,10 @@
 {
 	"name": "holohub:v2.2.0-dgpu",
 	"image": "easonli0701/holohub:v2.2.0-dgpu",
-    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ],
+    "mounts": 
+    [ 
+        "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" 
+    ],
 	"runArgs": [
 		"--runtime=nvidia"
 	]
