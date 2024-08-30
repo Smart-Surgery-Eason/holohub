@@ -1,6 +1,7 @@
 import os
 from holoscan.core import Application
-from holoscan.qcap_source import QCapSourceOp
+from holohub.qcap_source import QCAPSourceOp
+
 class QcapIO(Application):
     def __init__(self):
         super().__init__()

@@ -66,6 +66,7 @@ class EndoscopyApp(Application):
 
         if data == "none":
             data = os.environ.get("HOLOSCAN_DATA_PATH", "../data")
+            print(data)
 
         self.sample_data_path = data
 

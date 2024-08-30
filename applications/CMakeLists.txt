@@ -42,7 +42,9 @@ add_holohub_application(endoscopy_tool_tracking DEPENDS
                         )
 
 add_subdirectory(h264)
-
+add_holohub_application(hello_world)
+add_holohub_application(hello_world_2)
+add_holohub_application(hello_world_3)
 add_holohub_application(high_speed_endoscopy DEPENDS
                         OPERATORS emergent_source)
 
@@ -65,7 +67,7 @@ add_holohub_application(object_detection_torch HOLOSCAN_SAMPLE_APP)
 add_holohub_application(openigtlink_3dslicer DEPENDS OPERATORS openigtlink)
 
 add_holohub_application(prohawk_video_replayer DEPENDS OPERATORS prohawk_video_processing)
-
+add_holohub_application(qcap_io)
 add_holohub_application(qt_video_replayer DEPENDS OPERATORS qt_video npp_filter)
 
 add_holohub_application(tao_peoplenet)
