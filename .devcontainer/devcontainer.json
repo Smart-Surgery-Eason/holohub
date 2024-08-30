@@ -1,5 +1,15 @@
 {
     "name": "eason_holohub_dev",
-    "dockerFile": "../Dockerfile",
-    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ]
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "args": {
+            "BASE_IMAGE": "nvcr.io/nvidia/clara-holoscan/holoscan:v2.0.0-",
+            "GPU_TYPE": "dgpu",
+            "BUILDKIT_INLINE_CACHE": "1",
+        },
+        "options": [ "--network=host" ]
+    },
+    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ],
+    ""
 }
