@@ -1,7 +1,8 @@
 {
 	"name": "holohub:ngc-v2.2.0-dgpu",
-	"image": "easonli0701/holohub:ngc-v2.2.0-dgpu",
+	"image": "easonli0701/ngc-holohub:v2.2.0-dgpu",
 	"runArgs": [
 		"--runtime=nvidia"
-	]
+	],
+    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ]
 }
