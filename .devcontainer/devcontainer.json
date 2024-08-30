@@ -6,7 +6,7 @@
         "args": {
             "BASE_IMAGE": "nvcr.io/nvidia/clara-holoscan/holoscan:v2.0.0-",
             "GPU_TYPE": "dgpu",
-            "BUILDKIT_INLINE_CACHE": "1",
+            "BUILDKIT_INLINE_CACHE": "1"
         },
         "options": [ "--network=host" ]
     },
