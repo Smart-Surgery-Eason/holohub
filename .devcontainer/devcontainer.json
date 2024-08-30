@@ -10,6 +10,5 @@
         },
         "options": [ "--network=host" ]
     },
-    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ],
-    ""
+    "mounts": [ "source=../,target=/workspace/holohub", "source=/tmp/.X11-unix, target=/tmp/.X11-unix" ]
 }
