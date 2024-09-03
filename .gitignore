@@ -31,3 +31,4 @@ ngc-cli/
 .vscode-server/
 eason/
 tmp/
+.lesshst
