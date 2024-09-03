@@ -244,6 +244,7 @@ class EndoscopyApp(Application):
                 {("render_buffer_output", "source_video")},
             )
             self.add_flow(recorder_format_converter, recorder)
+            print("I'm here")
 
 
 if __name__ == "__main__":
