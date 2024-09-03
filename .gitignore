@@ -21,3 +21,13 @@ ngc-cli/
 .wget-hsts
 .cache/
 .cupy/
+
+.docker/
+.dotnet/
+.gitconfig
+.gnupg/
+.local/
+.ssh/
+.vscode-server/
+eason/
+tmp/
