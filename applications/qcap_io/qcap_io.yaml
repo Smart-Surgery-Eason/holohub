@@ -1,0 +1,6 @@
+extensions:
+- gxf_extensions/yuan_qcap/libgxf_qcap_source.so
+yuan:
+  width: 3840
+  height: 2160
+  rdma: true
