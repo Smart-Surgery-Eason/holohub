@@ -50,6 +50,14 @@ ARG CMAKE_BUILD_TYPE=Release
 #   GXF ENC / DEC needs lsmod to check whether it's dGPU or iGPU.
 RUN apt update && apt install -y libv4l-dev kmod
 
+# Qcap dependency
+RUN apt update \
+    && apt install --no-install-recommends -y \
+        libgstreamer1.0-0 \
+        libgstreamer-plugins-base1.0-0 \
+        libgles2 \
+        libopengl0
+
 # Below workarounds are required to get H.264 Encode and Decode working inside
 # the docker container.
 RUN if [ ! -e "/usr/lib/$(arch)-linux-gnu/libnvidia-encode.so" ]; then \
@@ -63,6 +71,6 @@ COPY applications/h264/install_dependencies.sh /
 WORKDIR /
 
 # Uncomment the following line for aarch64 support
-#ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/aarch64-linux-gnu/tegra/
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/aarch64-linux-gnu/tegra/
 
 RUN /install_dependencies.sh
