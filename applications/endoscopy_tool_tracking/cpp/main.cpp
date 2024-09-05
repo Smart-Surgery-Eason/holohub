@@ -29,6 +29,12 @@
 #include <vtk_renderer.hpp>
 #endif
 
+#include "holoscan/core/resources/gxf/gxf_component_resource.hpp"
+#include "holoscan/operators/gxf_codelet/gxf_codelet.hpp"
+
+#include "tensor_to_video_buffer.hpp"
+#include "video_encoder.hpp"
+
 #ifdef DELTACAST_VIDEOMASTER
 #include <videomaster_source.hpp>
 #include <videomaster_transmitter.hpp>
@@ -37,6 +43,83 @@
 #ifdef YUAN_QCAP
 #include <qcap_source.hpp>
 #endif
+
+// Import h.264 GXF codelets and components as Holoscan operators and resources
+// Starting with Holoscan SDK v2.1.0, importing GXF codelets/components as Holoscan operators/
+// resources can be done using the HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR and
+// HOLOSCAN_WRAP_GXF_COMPONENT_AS_RESOURCE macros. This new feature allows using GXF codelets
+// and components in Holoscan applications without writing custom class wrappers (for C++) and
+// Python wrappers (for Python) for each GXF codelet and component.
+// For the VideoEncoderRequestOp class, since it needs to override the setup() to provide custom
+// parameters and override the initialize() to register custom converters, it requires a custom
+// class that extends the holoscan::ops::GXFCodeletOp class.
+
+// The VideoDecoderResponseOp implements nvidia::gxf::VideoDecoderResponse and handles the output
+// of the decoded H264 bit stream.
+// Parameters:
+// - pool (std::shared_ptr<Allocator>): Memory pool for allocating output data.
+// - outbuf_storage_type (uint32_t): Output Buffer Storage(memory) type used by this allocator.
+//   Can be 0: kHost, 1: kDevice.
+// - videodecoder_context (std::shared_ptr<holoscan::ops::VideoDecoderContext>): Decoder context
+//   Handle.
+HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR(VideoDecoderResponseOp, "nvidia::gxf::VideoDecoderResponse")
+
+// The VideoDecoderRequestOp implements nvidia::gxf::VideoDecoderRequest and handles the input
+// for the H264 bit stream decode.
+// Parameters:
+// - inbuf_storage_type (uint32_t): Input Buffer storage type, 0:kHost, 1:kDevice.
+// - async_scheduling_term (std::shared_ptr<holoscan::AsynchronousCondition>): Asynchronous
+//   scheduling condition.
+// - videodecoder_context (std::shared_ptr<holoscan::ops::VideoDecoderContext>): Decoder
+//   context Handle.
+// - codec (uint32_t): Video codec to use, 0:H264, only H264 supported. Default:0.
+// - disableDPB (uint32_t): Enable low latency decode, works only for IPPP case.
+// - output_format (std::string): VidOutput frame video format, nv12pl and yuv420planar are
+//   supported.
+HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR(VideoDecoderRequestOp, "nvidia::gxf::VideoDecoderRequest")
+
+// The VideoDecoderContext implements nvidia::gxf::VideoDecoderContext and holds common variables
+// and underlying context.
+// Parameters:
+// - async_scheduling_term (std::shared_ptr<holoscan::AsynchronousCondition>): Asynchronous
+//   scheduling condition required to get/set event state.
+HOLOSCAN_WRAP_GXF_COMPONENT_AS_RESOURCE(VideoDecoderContext, "nvidia::gxf::VideoDecoderContext")
+
+// The VideoReadBitstreamOp implements nvidia::gxf::VideoReadBitStream and reads h.264 video files
+// from the disk at the specified input file path.
+// Parameters:
+// - input_file_path (std::string): Path to image file
+// - pool (std::shared_ptr<Allocator>): Memory pool for allocating output data
+// - outbuf_storage_type (int32_t): Output Buffer storage type, 0:kHost, 1:kDevice
+HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR(VideoReadBitstreamOp, "nvidia::gxf::VideoReadBitStream")
+
+// The VideoWriteBitstreamOp implements nvidia::gxf::VideoWriteBitstream and writes bit stream to
+// the disk at specified output path.
+// Parameters:
+// - output_video_path (std::string): The file path of the output video
+// - frame_width (int): The width of the output video
+// - frame_height (int): The height of the output video
+// - inbuf_storage_type (int): Input Buffer storage type, 0:kHost, 1:kDevice
+HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR(VideoWriteBitstreamOp, "nvidia::gxf::VideoWriteBitstream")
+
+// The VideoEncoderResponseOp implements nvidia::gxf::VideoEncoderResponse and handles the output
+// of the encoded YUV frames.
+// Parameters:
+// - pool (std::shared_ptr<Allocator>): Memory pool for allocating output data.
+// - videoencoder_context (std::shared_ptr<holoscan::ops::VideoEncoderContext>): Encoder context
+//   handle.
+// - outbuf_storage_type (uint32_t): Output Buffer Storage(memory) type used by this allocator.
+//   Can be 0: kHost, 1: kDevice. Default: 1.
+HOLOSCAN_WRAP_GXF_CODELET_AS_OPERATOR(VideoEncoderResponseOp, "nvidia::gxf::VideoEncoderResponse")
+
+// The VideoEncoderContext implements nvidia::gxf::VideoEncoderContext and holds common variables
+// and underlying context.
+// Parameters:
+// - async_scheduling_term (std::shared_ptr<holoscan::AsynchronousCondition>): Asynchronous
+//   scheduling condition required to get/set event state.
+HOLOSCAN_WRAP_GXF_COMPONENT_AS_RESOURCE(VideoEncoderContext, "nvidia::gxf::VideoEncoderContext")
+
+
 
 class App : public holoscan::Application {
  public:
@@ -57,8 +140,20 @@ class App : public holoscan::Application {
 
   void set_datapath(const std::string& path) { datapath = path; }
 
+  /// @brief As of Holoscan SDK 2.1.0, the extension manager must be used to register any external
+  /// GXF extensions in replace of the use of YAML configuration file.
+  void configure_extension() {
+    auto extension_manager = executor().extension_manager();
+    extension_manager->load_extension("libgxf_videodecoder.so");
+    extension_manager->load_extension("libgxf_videodecoderio.so");
+    extension_manager->load_extension("libgxf_videoencoder.so");
+    extension_manager->load_extension("libgxf_videoencoderio.so");
+  }
+
   void compose() override {
     using namespace holoscan;
+
+    configure_extension();
 
     std::shared_ptr<Operator> source;
     std::shared_ptr<Operator> recorder;
@@ -73,6 +168,8 @@ class App : public holoscan::Application {
         this->visualizer_name == "holoviz" ? "receivers" : "videostream";
     const std::string input_annotations_signal =
         this->visualizer_name == "holoviz" ? "receivers" : "annotations";
+
+    const bool record_output = from_config("record_output").as<bool>();
 
     uint32_t width = 0;
     uint32_t height = 0;
@@ -164,7 +261,7 @@ class App : public holoscan::Application {
 
     if (this->visualizer_name == "holoviz") {
       std::shared_ptr<BlockMemoryPool> visualizer_allocator;
-      if ((record_type_ == Record::VISUALIZER) && source_ == "replayer") {
+      if (((record_type_ == Record::VISUALIZER) && source_ == "replayer") || record_output ) {
         visualizer_allocator =
             make_resource<BlockMemoryPool>("allocator", 1, source_block_size, source_num_blocks);
       }
@@ -175,9 +272,10 @@ class App : public holoscan::Application {
           Arg("height") = height,
           Arg("enable_render_buffer_input") = overlay_enabled,
           Arg("enable_render_buffer_output") =
-              overlay_enabled || (record_type_ == Record::VISUALIZER),
+              overlay_enabled || (record_type_ == Record::VISUALIZER) || record_output,
           Arg("allocator") = visualizer_allocator,
           Arg("cuda_stream_pool") = cuda_stream_pool);
+
     }
 #ifdef VTK_RENDERER
     if (this->visualizer_name == "vtk") {
@@ -268,6 +366,58 @@ class App : public holoscan::Application {
                recorder_format_converter,
                {{"render_buffer_output", "source_video"}});
       add_flow(recorder_format_converter, recorder);
+    }
+
+    if (record_output) {
+      auto encoder_async_condition =
+          make_condition<AsynchronousCondition>("encoder_async_condition");
+      auto video_encoder_context =
+          make_resource<VideoEncoderContext>(Arg("scheduling_term") = encoder_async_condition);
+
+      auto video_encoder_request = make_operator<ops::VideoEncoderRequestOp>(
+          "video_encoder_request",
+          from_config("video_encoder_request"),
+          Arg("videoencoder_context") = video_encoder_context);
+
+      auto video_encoder_response = make_operator<VideoEncoderResponseOp>(
+          "video_encoder_response",
+          from_config("video_encoder_response"),
+          Arg("pool") =
+              make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks),
+          Arg("videoencoder_context") = video_encoder_context);
+
+      auto holoviz_output_format_converter = make_operator<ops::FormatConverterOp>(
+          "holoviz_output_format_converter",
+          from_config("holoviz_output_format_converter"),
+          Arg("pool") =
+              make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks));
+
+      auto encoder_input_format_converter = make_operator<ops::FormatConverterOp>(
+          "encoder_input_format_converter",
+          from_config("encoder_input_format_converter"),
+          Arg("pool") =
+              make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks));
+
+      auto tensor_to_video_buffer = make_operator<ops::TensorToVideoBufferOp>(
+          "tensor_to_video_buffer", from_config("tensor_to_video_buffer"));
+
+      auto bitstream_writer = make_operator<VideoWriteBitstreamOp>(
+          "bitstream_writer",
+          from_config("bitstream_writer"),
+          Arg("output_video_path", datapath + "/surgical_video_output.264"),
+          Arg("input_crc_file_path", datapath + "/surgical_video_output.txt"),
+          Arg("pool") =
+              make_resource<BlockMemoryPool>("pool", 0, source_block_size, source_num_blocks));
+
+      add_flow(
+          visualizer_operator, holoviz_output_format_converter, {{"render_buffer_output", "source_video"}});
+      add_flow(holoviz_output_format_converter,
+               encoder_input_format_converter,
+               {{"tensor", "source_video"}});
+      add_flow(encoder_input_format_converter, tensor_to_video_buffer, {{"tensor", "in_tensor"}});
+      add_flow(
+          tensor_to_video_buffer, video_encoder_request, {{"out_video_buffer", "input_frame"}});
+      add_flow(video_encoder_response, bitstream_writer, {{"output_transmitter", "data_receiver"}});
     }
   }
 

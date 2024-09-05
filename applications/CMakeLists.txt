@@ -43,6 +43,8 @@ add_holohub_application(endoscopy_out_of_body_detection)
 
 add_holohub_application(endoscopy_tool_tracking DEPENDS
                         OPERATORS lstm_tensor_rt_inference
+                                  video_encoder
+                                  tensor_to_video_buffer
                                   tool_tracking_postprocessor
                                   OPTIONAL deltacast_videomaster yuan_qcap vtk_renderer)
 
