@@ -41,8 +41,8 @@ aja:
   overlay_rdma: true
 
 yuan:
-  width: 3840
-  height: 2160
+  width: 1920
+  height: 1080
   rdma: true
   input_type: hdmi
 
@@ -213,8 +213,8 @@ holoviz_overlay:
 video_encoder_request:
   inbuf_storage_type: 1
   codec: 0
-  input_width: 854
-  input_height: 480
+  input_width: 1920
+  input_height: 1080
   input_format: "yuv420planar"
   profile: 2
   bitrate: 20000000
@@ -228,15 +228,15 @@ video_encoder_response:
   outbuf_storage_type: 1
 
 bitstream_writer:
-  frame_width: 854
-  frame_height: 480
+  frame_width: 1920
+  frame_height: 1080
   inbuf_storage_type: 1
 
 holoviz_output_format_converter:
   in_dtype: "rgba8888"
   out_dtype: "rgb888"
-  resize_width: 854
-  resize_height: 480
+  resize_width: 1920
+  resize_height: 1080
 
 encoder_input_format_converter:
   in_dtype: "rgb888"

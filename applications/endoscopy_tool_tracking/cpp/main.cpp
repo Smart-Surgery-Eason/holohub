@@ -183,7 +183,8 @@ class App : public holoscan::Application {
           "aja", from_config("aja"), from_config("external_source"));
       source_block_size = width * height * 4 * 4;
       source_num_blocks = use_rdma ? 3 : 4;
-    } else if (source_ == "yuan") {
+    } 
+    else if (source_ == "yuan") {
       width = from_config("yuan.width").as<uint32_t>();
       height = from_config("yuan.height").as<uint32_t>();
 #ifdef YUAN_QCAP
@@ -389,14 +390,14 @@ class App : public holoscan::Application {
       auto holoviz_output_format_converter = make_operator<ops::FormatConverterOp>(
           "holoviz_output_format_converter",
           from_config("holoviz_output_format_converter"),
-          Arg("pool") =
-              make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks));
+          Arg("pool") = make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks)
+          );
 
       auto encoder_input_format_converter = make_operator<ops::FormatConverterOp>(
           "encoder_input_format_converter",
           from_config("encoder_input_format_converter"),
-          Arg("pool") =
-              make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks));
+          Arg("pool") = make_resource<BlockMemoryPool>("pool", 1, source_block_size, source_num_blocks)
+              );
 
       auto tensor_to_video_buffer = make_operator<ops::TensorToVideoBufferOp>(
           "tensor_to_video_buffer", from_config("tensor_to_video_buffer"));
