@@ -21,3 +21,8 @@ ngc-cli/
 .wget-hsts
 .cache/
 .cupy/
+.config/
+.docker/
+.gnupg/
+.local/
+.ssh/
