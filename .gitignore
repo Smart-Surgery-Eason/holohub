@@ -21,3 +21,13 @@ ngc-cli/
 .wget-hsts
 .cache/
 .cupy/
+.config/
+.docker/
+.gnupg/
+.local/
+.ssh/
+
+.viminfo
+ngc-cli.md5
+ngccli_arm64.zip
+applications/urology-inference-holoscan-py/

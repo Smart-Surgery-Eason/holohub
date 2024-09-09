@@ -16,7 +16,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(endoscopy_tool_tracking CXX)
 
-find_package(holoscan 1.0 REQUIRED CONFIG
+find_package(holoscan 2.1.0 REQUIRED CONFIG
              PATHS "/opt/nvidia/holoscan" "/workspace/holoscan-sdk/install")
 
 add_executable(endoscopy_tool_tracking
@@ -31,6 +31,9 @@ target_link_libraries(endoscopy_tool_tracking
   holoscan::ops::video_stream_recorder
   holoscan::ops::format_converter
   holoscan::ops::holoviz
+  holoscan::ops::tensor_to_video_buffer
+  holoscan::ops::gxf_codelet
+  holoscan::ops::video_encoder
   lstm_tensor_rt_inference
   tool_tracking_postprocessor
 )
