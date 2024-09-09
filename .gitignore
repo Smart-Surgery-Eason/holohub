@@ -26,3 +26,7 @@ ngc-cli/
 .gnupg/
 .local/
 .ssh/
+
+.viminfo
+ngc-cli.md5
+ngccli_arm64.zip
