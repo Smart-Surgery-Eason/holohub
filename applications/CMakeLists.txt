@@ -48,7 +48,7 @@ add_holohub_application(endoscopy_tool_tracking DEPENDS
                                   tool_tracking_postprocessor
                                   OPTIONAL deltacast_videomaster yuan_qcap vtk_renderer)
 
-add_holohub_application(urology_inference_holoscan DEPENDS
+add_holohub_application(urology_inference_holoscan_py DEPENDS
                         OPTIONAL yuan_qcap)
 
 add_holohub_application(endoscopy_tool_tracking_distributed DEPENDS
