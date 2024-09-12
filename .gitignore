@@ -31,3 +31,5 @@ ngc-cli/
 ngc-cli.md5
 ngccli_arm64.zip
 applications/urology-inference-holoscan-py/
+.python_history
+.vscode-server/

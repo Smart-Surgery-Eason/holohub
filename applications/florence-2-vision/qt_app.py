@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from florence2_app import FlorenceApp  # Import the FlorenceApp class
 from PySide6.QtCore import QObject, Qt, QThread, Signal
@@ -24,7 +25,10 @@ class FlorenceWorker(QObject):
     progress = Signal(int)  # Signal to indicate progress (if needed)
 
     def run(self):
-        """Run the Holoscan application."""
+        # while True:
+        #     print("Hello, World!")
+        #     time.sleep(1)            
+        # """Run the Holoscan application."""
         config_file = os.path.join(os.path.dirname(__file__), "config.yaml")
         global gApp
         gApp = app = FlorenceApp()
@@ -84,14 +88,14 @@ class Window(QMainWindow):
         """Handle the submit button click event."""
         selected_option = self.dropdown.currentText()
         entered_text = self.text_input.text()
-
-        # Set parameters in the Holoscan application
         global gApp
         if gApp:
             gApp.set_parameters(selected_option, entered_text)
 
+        # Set parameters in the Holoscan application
+
     def runHoloscanApp(self):
-        """Run the Holoscan application in a separate thread."""
+        # """Run the Holoscan application in a separate thread."""
         self.thread = QThread()
         self.worker = FlorenceWorker()
         self.worker.moveToThread(self.thread)

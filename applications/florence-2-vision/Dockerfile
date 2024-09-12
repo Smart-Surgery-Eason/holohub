@@ -65,7 +65,7 @@ RUN huggingface-cli download microsoft/Florence-2-large-ft \
 
 # Build/install flash-attention 2 (NOTE: on Arm64 this will take between 1-1.5 hours)
 # MAX_JOBS is set to 4 to avoid running out of memory
-RUN MAX_JOBS=4 python3 -m pip install --no-cache-dir --no-build-isolation flash-attn
+# RUN MAX_JOBS=4 python3 -m pip install --no-cache-dir --no-build-isolation flash-attn
 
 # Install QT dependencies
 RUN apt-get install -y \
