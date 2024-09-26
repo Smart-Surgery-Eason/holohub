@@ -1,2 +1,3 @@
-working_dir=$(dirname $(dirname $(realpath $0)))
-$working_dir/run launch urology-inference-holoscan-py
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+RUN_PATH=$(realpath "$SCRIPT_DIR/../run")
+$RUN_PATH launch urology-inference-holoscan-py
