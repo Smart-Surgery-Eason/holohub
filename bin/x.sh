@@ -1,0 +1,1 @@
+export DISPLAY=localhost:11.0
